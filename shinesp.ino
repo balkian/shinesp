@@ -1,7 +1,8 @@
+
 #define FASTLED_ESP8266_RAW_PIN_ORDER
 #include "FastLED.h"
 
-#define NUM_LEDS 150
+#define NUM_LEDS 300
 #define DATA_PIN 0
 #define led 13
 
@@ -15,7 +16,10 @@ CRGB leds[NUM_LEDS];
 #include <ArduinoOTA.h>
 
 const char* customssid = "led";
+const int binterval = 10;
 ESP8266WebServer httpServer(80);
+
+int brightness = 255;
 
 struct credential {
   String ssid;
@@ -157,12 +161,35 @@ void handleOff() {
   FastLED.show();
   httpServer.send(200, "text/plain", "Off!");
 }
+void handleBrightnessUp() {
+  // min/max don't work
+  if (brightness > 255 - binterval) {
+    brightness = 255;
+   } else {
+   brightness = brightness + binterval;
+  }
+  FastLED.setBrightness(brightness);
+  httpServer.send(200, "text/plain", "Brightness set to " + String(brightness));
+}
+
+void handleBrightnessDown() {
+    if (brightness < binterval) {
+      brightness = 0;
+    } else {
+
+   brightness = brightness - binterval;
+    }
+  FastLED.setBrightness(brightness);
+  httpServer.send(200, "text/plain", "Brightness set to " + String(brightness));
+}
 
 void handleBrightness() {
   int value = httpServer.arg("value").toInt();
   if (value > 0) {
-    FastLED.setBrightness(value);
-    httpServer.send(200, "text/plain", "Brightness set to " + String(value));
+    brightness = value;
+ 
+    FastLED.setBrightness(brightness);
+    httpServer.send(200, "text/plain", "Brightness set to " + String(brightness));
     FastLED.show();
 
   } else {
@@ -302,12 +329,16 @@ void setup() {
   httpServer.on ( "/color", handleColor );
   httpServer.on ( "/off", handleOff );
   httpServer.on ( "/brightness", handleBrightness );
+  httpServer.on ( "/brightness/up", handleBrightnessUp );
+  httpServer.on ( "/brightness/down", handleBrightnessDown );
   httpServer.begin();
 
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
 //  FastLED.setDither(0);
-  FastLED.setBrightness(100);
+  FastLED.setBrightness(255);
   FastLED.setMaxPowerInVoltsAndMilliamps(5, 20000);
+  fill_solid(leds, NUM_LEDS, CRGB(255, 255, 255));
+  FastLED.show();
 }
 
 void loop() {
