@@ -17,6 +17,9 @@ CRGB leds[NUM_LEDS];
 
 const char* customssid = "led";
 const int binterval = 10;
+bool isOn = false;
+CRGB lastColor = CRGB::White;
+
 ESP8266WebServer httpServer(80);
 
 int brightness = 255;
@@ -98,12 +101,21 @@ void setCredentials(struct credential cred) {
     Serial.print("Wrote: ");
     Serial.println(qsid[i]);
   }
+  for (int i = qsid.length(); i< 32; ++i){
+    EEPROM.write(i, 0);
+
+  }
+
   Serial.println("writing eeprom pass:");
   for (int i = 0; i < qpass.length(); ++i)
   {
     EEPROM.write(32 + i, qpass[i]);
     Serial.print("Wrote: ");
     Serial.println(qpass[i]);
+  }
+  for (int i = qpass.length(); i< 32; ++i){
+    EEPROM.write(i+32, 0);
+
   }
   EEPROM.commit();
 }
@@ -140,9 +152,8 @@ void handleClearCredentials() {
 }
 
 void handleWhite() {
-  fill_solid(leds, NUM_LEDS, CRGB(255, 255, 255));
-  FastLED.show();
-  httpServer.send(200, "text/plain", "White!");
+  lastColor = CRGB::White;
+  handleOn();
 }
 
 void handleColor() {
@@ -150,17 +161,35 @@ void handleColor() {
   int g = httpServer.arg("g").toInt();
   int b = httpServer.arg("b").toInt();
   char msg[400];
-  fill_solid( leds, NUM_LEDS, CRGB(r,g,b));
+  lastColor = CRGB(r, g, b);
+  fill_solid( leds, NUM_LEDS, lastColor);
   FastLED.show();
   snprintf ( msg, 400, "RGB=(%d, %d, %d)", r, g, b);
   httpServer.send(200, "text/plain", msg);
 }
 
 void handleOff() {
+  isOn = false;
   fill_solid( leds, NUM_LEDS, CRGB::Black);
   FastLED.show();
   httpServer.send(200, "text/plain", "Off!");
 }
+
+void handleOn() {
+  isOn = true;
+  fill_solid( leds, NUM_LEDS, lastColor);
+  FastLED.show();
+  httpServer.send(200, "text/plain", "On!");
+}
+
+void handleToggle() {
+  if ( isOn ){
+    handleOff();
+  } else {
+    handleOn();
+  }
+}
+
 void handleBrightnessUp() {
   // min/max don't work
   if (brightness > 255 - binterval) {
@@ -218,7 +247,6 @@ void handleRoot() {
     <body>\
       <h1>Hello from ESP8266!</h1>\
       <p>Uptime: %02d:%02d:%02d</p>\
-      <img src=\"/test.svg\" />\
     </body>\
   </html>",
 
@@ -325,9 +353,11 @@ void setup() {
   httpServer.on ( "/", handleRoot );
   httpServer.on ( "/clear", handleClearCredentials );
   httpServer.on ( "/credentials", handleSetCredentials );
-  httpServer.on ( "/white", handleWhite );
   httpServer.on ( "/color", handleColor );
   httpServer.on ( "/off", handleOff );
+  httpServer.on ( "/on", handleOn );
+  httpServer.on ( "/toggle", handleToggle );
+  httpServer.on ( "/white", handleWhite );
   httpServer.on ( "/brightness", handleBrightness );
   httpServer.on ( "/brightness/up", handleBrightnessUp );
   httpServer.on ( "/brightness/down", handleBrightnessDown );
@@ -337,8 +367,10 @@ void setup() {
 //  FastLED.setDither(0);
   FastLED.setBrightness(255);
   FastLED.setMaxPowerInVoltsAndMilliamps(5, 20000);
-  fill_solid(leds, NUM_LEDS, CRGB(255, 255, 255));
-  FastLED.show();
+  if (isOn){
+    fill_solid(leds, NUM_LEDS, lastColor);
+    FastLED.show();
+  }
 }
 
 void loop() {
