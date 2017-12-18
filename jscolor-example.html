@@ -47,7 +47,8 @@
                 ready = true;
             };
         };
-        xhttp.open("GET", "http://192.168.0.104/off", true);
+        ip = document.getElementById("ip-address").value ;
+        xhttp.open("GET", ip + "/off", true);
         xhttp.send();
     }
     </script>
