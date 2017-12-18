@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Brillo Dashboard</title>
+</head>
+<body style="text-align:center;">
+
+
+
+	<script src="jscolor.min.js"></script>
+
+
+	<h2>Set the LED's color</h2>
+
+  <label>IP address</label>
+	<input id="ip-address" type="text" value="http://192.168.1.104" />
+	<input id="chosen-value" class="jscolor {valueElement:'chosen-value', onFineChange:'setColor(this.rgb[0], this.rgb[1], this.rgb[2])'}" value="000000">
+
+	<button onclick="turnOff()">Turn OFF</button>
+	<button onclick="setColor(255, 255, 255)">White</button>
+	<script>
+      ready = true;
+	function setColor(red, green, blue) {
+    if (! ready){
+      return;
+    }
+    ready = false;
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+    console.log("Sent");
+      ready = true;
+    <!-- document.getElementById("demo").innerHTML = this.responseText; -->
+    }
+    };
+    ip = document.getElementById("ip-address").value ;
+    xhttp.open("GET", ip + "/color?r="+red+"&g="+green+"&b="+blue, true);
+    xhttp.send();
+    };
+
+    function turnOff(){
+        console.log("Turning off");
+        xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                console.log("Sent off");
+                ready = true;
+            };
+        };
+        xhttp.open("GET", "http://192.168.0.104/off", true);
+        xhttp.send();
+    }
+    </script>
+
+
+
+</body>
+</html>
