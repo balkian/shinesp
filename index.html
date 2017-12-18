@@ -17,6 +17,11 @@
 	<input id="chosen-value" class="jscolor {valueElement:'chosen-value', onFineChange:'setColor(this.rgb[0], this.rgb[1], this.rgb[2])'}" value="000000">
 
 	<button onclick="turnOff()">Turn OFF</button>
+	<button onclick="beatOn()">Beating ON</button>
+	<button onclick="beatOff()">Beating OFF</button>
+  <label>Beating period (ms)</label>
+	<input id="beating-period" type="int" value="2000" />
+	<button onclick="turnOff()">Turn OFF</button>
 	<button onclick="setColor(255, 255, 255)">White</button>
 	<script>
       ready = true;
@@ -49,6 +54,45 @@
         };
         ip = document.getElementById("ip-address").value ;
         xhttp.open("GET", ip + "/off", true);
+        xhttp.send();
+    }
+   function beatOn(){
+
+       period = document.getElementById("beating-period").value ;
+       BeatPeriod(period);
+       return Beat(true);
+   }
+   function beatOff(){
+       return Beat(false);
+   }
+   function Beat(b){
+        var state = "off";
+        if (b){
+            state = "on";
+        }
+        console.log("Turning beating " + state);
+        xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                console.log("Sent beating " + state);
+                ready = true;
+            };
+        };
+        ip = document.getElementById("ip-address").value ;
+        xhttp.open("GET", ip + "/beat/" + state, true);
+        xhttp.send();
+   }
+   function BeatPeriod(p){
+        console.log("Setting beating period to: " + p);
+        xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                console.log("Sent beating period to:" + p);
+                ready = true;
+            };
+        };
+        ip = document.getElementById("ip-address").value ;
+        xhttp.open("GET", ip + "/beat/?period=" + p, true);
         xhttp.send();
     }
     </script>

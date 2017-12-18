@@ -26,6 +26,21 @@ To get the IP of the board you have several options:
 * The board prints the IP address it was given to the serial monitor
 * Use nmap/zenmap/similar
 
+
+# WEB UI
+
+There is a simple HTML website that can be used to test the API and set the colors of the LED.
+From the root of the repository, open it with your favourite browser, or with python:
+
+```
+firefox $PWD/index.html
+
+# OR
+
+python3 -m http.server
+```
+
+
 # API
 
 * `/clear` clear WIFI credentials
@@ -38,6 +53,17 @@ To get the IP of the board you have several options:
 * `/brightness?value=<VALUE>` set the brightness value (0-255)
 * `/brightness/up` turn up the brightness (up to 255)
 * `/brightness/down` turn down the brightness (down to 0)
+
+
+# Developing
+
+* Install arduino
+
+* Install support for ESP8266 boards in arduino: https://github.com/esp8266/Arduino
+
+* Install the fastled library in arduino: https://github.com/FastLED/FastLED/
+
+* Profit
 
 # Debugging
 You can use a serial monitor (e.g. in the Arduino IDE) to connect to the board.

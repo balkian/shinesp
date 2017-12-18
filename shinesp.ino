@@ -2,7 +2,9 @@
 #define FASTLED_ESP8266_RAW_PIN_ORDER
 #include "FastLED.h"
 
-#define NUM_LEDS 300
+#include "math.h"
+
+#define NUM_LEDS 150
 #define DATA_PIN 0
 #define led 13
 
@@ -17,6 +19,9 @@ CRGB leds[NUM_LEDS];
 
 const char* customssid = "led";
 const int binterval = 10;
+bool isBeating = false;
+String beatingFun = "sin";
+int beatingPeriod = 5000;
 bool isOn = false;
 CRGB lastColor = CRGB::White;
 
@@ -212,6 +217,52 @@ void handleBrightnessDown() {
   httpServer.send(200, "text/plain", "Brightness set to " + String(brightness));
 }
 
+
+void handleBeat() {
+  beatingPeriod = httpServer.arg("period").toInt();
+  beatingFun = httpServer.arg("fun");
+  // min/max don't work
+  if (beatingPeriod < 0) {
+    beatingPeriod = 5000;
+   } 
+  httpServer.send(200, "text/plain", "Beating period set to " + String(beatingPeriod) + " and function set to " + beatingFun);
+}
+
+void handleBeatOn() {
+  isBeating = true;
+  httpServer.send(200, "text/plain", "Now beating!");
+}
+
+void handleBeatOff() {
+  isBeating = false;
+  FastLED.setBrightness(brightness);
+  httpServer.send(200, "text/plain", "Not beating now!");
+}
+
+int getBeatingBrightness(){
+  
+  double val = 255.0;
+  if (beatingFun.equals("lin")){
+    // statements
+    val = (millis() % (beatingPeriod)) - (beatingPeriod/2.0);
+
+    if (val < 0.0) {
+      val = -val;
+    }
+    val = 255.0 * 2.0 * (val/beatingPeriod);
+  }
+  else {
+   // statements
+      val =  (cos(millis()*(2.0*PI)/((double) beatingPeriod))*127+127);
+  }
+  return (int) (val*(brightness/255.0));
+}
+
+
+void beat(){
+  FastLED.setBrightness(getBeatingBrightness());
+}
+
 void handleBrightness() {
   int value = httpServer.arg("value").toInt();
   if (value > 0) {
@@ -358,6 +409,9 @@ void setup() {
   httpServer.on ( "/on", handleOn );
   httpServer.on ( "/toggle", handleToggle );
   httpServer.on ( "/white", handleWhite );
+  httpServer.on ( "/beat/on", handleBeatOn );
+  httpServer.on ( "/beat/off", handleBeatOff );
+  httpServer.on ( "/beat/", handleBeat );
   httpServer.on ( "/brightness", handleBrightness );
   httpServer.on ( "/brightness/up", handleBrightnessUp );
   httpServer.on ( "/brightness/down", handleBrightnessDown );
@@ -376,5 +430,8 @@ void setup() {
 void loop() {
   ArduinoOTA.handle();
   httpServer.handleClient();
+  if (isBeating){
+    beat();
+  }
   FastLED.show();
 }
